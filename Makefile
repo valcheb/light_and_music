@@ -49,7 +49,7 @@ LDFLAGS := -Wl,-Map,$(BUILD)/$(TARGET).map -g -T$(LDSCRIPT) --specs=nano.specs -
 SPLD := third_party/SPL
 CFLAGS += -I$(SPLD)/inc
 #used lib source
-OBJF += $(BUILD)/stm32f4xx_rcc.o
+OBJF += $(BUILD)/stm32f4xx_rcc.o $(BUILD)/stm32f4xx_gpio.o $(BUILD)/stm32f4xx_tim.o
 
 #Paths for compilator
 VPATH := $(SOURCED)
