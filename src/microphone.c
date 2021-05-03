@@ -4,7 +4,9 @@
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_spi.h"
 #include "misc.h"
+#include "pdm_filter.h"
 
+static PDMFilter_InitStruct pdm_filter_init;
 void mic_init()
 {
     //gpio
@@ -31,7 +33,6 @@ void mic_init()
 
     // i2s over spi2
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-    //RCC_AHB1PeriphClockCmd(RCC_AHB1ENR_CRCEN, ENABLE);
     RCC_PLLI2SCmd(ENABLE);
 
     I2S_InitTypeDef i2s_init;
@@ -53,6 +54,15 @@ void mic_init()
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+
+    //pdm filter
+    RCC_AHB1PeriphClockCmd(RCC_AHB1ENR_CRCEN, ENABLE);
+    pdm_filter_init.LP_HZ = 0;
+    pdm_filter_init.HP_HZ = 0;
+    pdm_filter_init.Fs = 16000;
+    pdm_filter_init.Out_MicChannels = 1;
+    pdm_filter_init.In_MicChannels = 1;
+    PDM_Filter_Init(&pdm_filter_init);
 }
 
 void mic_enable()
@@ -61,22 +71,23 @@ void mic_enable()
     SPI_I2S_ITConfig(SPI2, SPI_I2S_IT_RXNE, ENABLE);
 }
 
-#define MIC_RX_SIZE 64 //1ms for 16kHz input
-#define MIC_GAIN    80
-static uint16_t mic_rx_buf[MIC_RX_SIZE];
+#define MIC_PDM_SIZE 64 //1ms for 16kHz input
+#define MIC_PCM_SIZE 16 //pdm_filter_init.Fs / 1000
+#define MIC_GAIN 80
+static uint16_t mic_pdm_buf[MIC_PDM_SIZE];
+static uint16_t mic_pcm_buf[MIC_PCM_SIZE];
 
 void SPI2_IRQHandler(void)
 {
     static int mic_counter = 0;
     if (SPI_GetITStatus(SPI2, SPI_I2S_IT_RXNE) != RESET)
     {
-        //mic_rx_buf[mic_counter++] = HTONS(SPI_I2S_ReceiveData(SPI2));
-        mic_rx_buf[mic_counter++] = SPI_I2S_ReceiveData(SPI2);
+        mic_pdm_buf[mic_counter++] = HTONS(SPI_I2S_ReceiveData(SPI2));
 
-        if (mic_counter == MIC_RX_SIZE)
+        if (mic_counter == MIC_PDM_SIZE)
         {
             mic_counter = 0;
-            //PDM_Filter_64_LSB((uint8_t *)mic_rx_buf, (uint16_t *)RxLSBBuf, MIC_GAIN, (PDMFilter_InitStruct *)&Filter);
+            PDM_Filter_64_LSB((uint8_t *)mic_pdm_buf, mic_pcm_buf, MIC_GAIN, &pdm_filter_init);
         }
     }
 }

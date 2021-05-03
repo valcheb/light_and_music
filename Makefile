@@ -18,7 +18,7 @@ TARGET := lm
 BUILD := build
 
 #Requared paths
-SOURCED := . third_party/mcu src
+SOURCED := . third_party/mcu third_party/PDM_filter src
 CMSISD := third_party/CMSIS
 
 #Preparation
@@ -50,6 +50,7 @@ SPLD := third_party/SPL
 CFLAGS += -I$(SPLD)/inc
 #used lib source
 OBJF += $(BUILD)/stm32f4xx_rcc.o $(BUILD)/stm32f4xx_gpio.o $(BUILD)/stm32f4xx_tim.o $(BUILD)/stm32f4xx_spi.o $(BUILD)/misc.o
+OBJF += third_party/PDM_filter/libPDMFilter_GCC.a
 
 #Paths for compilator
 VPATH := $(SOURCED)
