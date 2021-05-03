@@ -44,13 +44,13 @@ CFLAGS += -I$(CMSISD)/include -I$(CMSISD)/device $(addprefix -I, $(SOURCED))
 
 #Link Flags
 LDFLAGS := -Wl,-Map,$(BUILD)/$(TARGET).map -g -T$(LDSCRIPT) --specs=nano.specs --specs=nosys.specs
+LDFLAGS += -Lthird_party/PDM_filter -lPDMFilter_GCC
 
 #Headers of libraries
 SPLD := third_party/SPL
 CFLAGS += -I$(SPLD)/inc
 #used lib source
 OBJF += $(BUILD)/stm32f4xx_rcc.o $(BUILD)/stm32f4xx_gpio.o $(BUILD)/stm32f4xx_tim.o $(BUILD)/stm32f4xx_spi.o $(BUILD)/misc.o
-OBJF += third_party/PDM_filter/libPDMFilter_GCC.a
 
 #Paths for compilator
 VPATH := $(SOURCED)
