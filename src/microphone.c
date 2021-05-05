@@ -117,10 +117,9 @@ void rx_handler()
     {
         memcpy(codec_tx_buf, mic_accum_buf, ACCUM_BUF_SIZE * sizeof(uint16_t));
         buf_pos = 0;
-        while (DMA1_Stream5->NDTR != 0)
-        {
-        };
-        SPI_I2S_ITConfig(SPI2, SPI_I2S_IT_RXNE, ENABLE);
+        DMA_Cmd(DMA1_Stream5, DISABLE);
+        DMA1_Stream5->NDTR = ACCUM_BUF_SIZE * sizeof(uint16_t);
+        DMA_Cmd(DMA1_Stream5, ENABLE);
     }
 }
 
