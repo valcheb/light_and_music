@@ -86,7 +86,7 @@ static uint16_t stereo_buf[STEREO_BUF_SIZE];
 
 #define ACCUM_TIME 1
 #define ACCUM_BUF_SIZE STEREO_BUF_SIZE *ACCUM_TIME
-static mic_accum_buf[ACCUM_BUF_SIZE];
+static uint16_t mic_accum_buf[ACCUM_BUF_SIZE];
 
 #define CODEC_TX_SIZE ACCUM_BUF_SIZE
 static uint16_t codec_tx_buf[CODEC_TX_SIZE];
