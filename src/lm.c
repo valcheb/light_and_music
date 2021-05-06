@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "microphone.h"
+
 static int channel_number = 0;
 static int buffer_size = 0;
 static bool playback = false;
@@ -11,11 +13,11 @@ static uint16_t *sound_buffer;
 static uint16_t *pcm_buffer;
 static float32_t *magnitude_buffer;
 
-static void lm_internal_init(int ch_number, int buf_size, int pcm_b_size, bool pb)
+static void lm_internal_init(int ch_number, int buf_size, bool pb)
 {
     channel_number = ch_number;
     buffer_size = buf_size;
-    pcm_size = pcm_b_size;
+    pcm_size = MIC_PCM_SIZE;
     playback = pb;
 
     sound_buffer = (uint16_t *)malloc(buf_size * sizeof(uint16_t));
@@ -37,11 +39,11 @@ static void lm_internal_init(int ch_number, int buf_size, int pcm_b_size, bool p
     }
 }
 
-void lm_init(int ch_number, int buf_size, int sample_freq, bool pb)
+void lm_init(int ch_number, int buf_size, bool pb)
 {
-    lm_internal_init(ch_number, buf_size, sample_freq / 1000, pb);
+    lm_internal_init(ch_number, buf_size, pb);
 
-    //mic_init();
+    mic_init();
     //pwm_init(channel_number);
 
     //spectrum_init();
@@ -60,7 +62,7 @@ void lm_process()
     if (mic_rx_ready())
     {
         mic_rx_ready_clear();
-        mic_pdm_pcm_convert(pcm_buffer, pcm_size);
+        mic_pdm_pcm_convert(pcm_buffer);
         memcpy(sound_buffer + counter * pcm_size, pcm_buffer, pcm_size);
         counter++;
     }
