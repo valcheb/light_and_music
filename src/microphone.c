@@ -71,11 +71,22 @@ void mic_enable()
     SPI_I2S_ITConfig(SPI2, SPI_I2S_IT_RXNE, ENABLE);
 }
 
-#define MIC_PDM_SIZE 64 //1ms for 16kHz input
-#define MIC_PCM_SIZE 16 //pdm_filter_init.Fs / 1000
-#define MIC_GAIN 80
 static uint16_t mic_pdm_buf[MIC_PDM_SIZE];
-static uint16_t mic_pcm_buf[MIC_PCM_SIZE];
+void mic_pdm_pcm_convert(uint16_t *pcm_buffer)
+{
+    PDM_Filter_64_LSB((uint8_t *)mic_pdm_buf, pcm_buffer, MIC_GAIN, &pdm_filter_init);
+}
+
+static bool rx_ready = false;
+bool mic_rx_ready()
+{
+    return rx_ready;
+}
+
+void mic_rx_ready_clear()
+{
+    rx_ready = false;
+}
 
 void SPI2_IRQHandler(void)
 {
@@ -87,7 +98,7 @@ void SPI2_IRQHandler(void)
         if (mic_counter == MIC_PDM_SIZE)
         {
             mic_counter = 0;
-            PDM_Filter_64_LSB((uint8_t *)mic_pdm_buf, mic_pcm_buf, MIC_GAIN, &pdm_filter_init);
+            rx_ready = true;
         }
     }
 }
