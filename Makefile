@@ -51,6 +51,7 @@ SPLD := third_party/SPL
 CFLAGS += -I$(SPLD)/inc
 #used lib source
 OBJF += $(BUILD)/stm32f4xx_rcc.o $(BUILD)/stm32f4xx_gpio.o $(BUILD)/stm32f4xx_tim.o $(BUILD)/stm32f4xx_spi.o $(BUILD)/misc.o
+OBJF += $(BUILD)/stm32f4xx_dma.o $(BUILD)/stm32f4xx_i2c.o
 
 #Paths for compilator
 VPATH := $(SOURCED)

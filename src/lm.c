@@ -6,6 +6,7 @@
 #include "lm_config.h"
 #include "pwm.h"
 #include "microphone.h"
+#include "player.h"
 
 static uint16_t sound_buffer[LM_SOUND_BUFFER_SIZE];
 static uint16_t pcm_buffer[MIC_PCM_SIZE];
@@ -18,18 +19,21 @@ void lm_init()
 
     //spectrum_init();
 
-    /*
     if (LM_USE_PLAYBACK)
     {
-        playback_init();
+        player_init();
     }
-    */
+
 }
 
 void lm_enable()
 {
-    mic_enable();
     simple_leds_check();
+    mic_enable();
+    if (LM_USE_PLAYBACK)
+    {
+        player_enable();
+    }
 }
 
 void lm_process()
@@ -49,7 +53,7 @@ void lm_process()
 
         if (LM_USE_PLAYBACK)
         {
-            //playback_send(sound_buffer);
+            player_send(sound_buffer, LM_SOUND_BUFFER_SIZE);
         }
 
         /*spectral_analysis(sound_buffer, buffer_size,
