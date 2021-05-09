@@ -22,14 +22,12 @@ const static pwm_channel_t pwm_ch_pool[PWM_CHANNEL_ENUM_SIZE] =
     {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_15, GPIO_PinSource15, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, 4}
 };
 
-static void pwm_channel_init(pwm_channel_e i)
+static void pwm_ch_gpio_init(const pwm_channel_t *chan)
 {
-    const pwm_channel_t *chan = &pwm_ch_pool[i];
+    GPIO_InitTypeDef gpio_init;
 
-    //gpio
     RCC_AHB1PeriphClockCmd(chan->gpio_rcc, ENABLE);
 
-    GPIO_InitTypeDef gpio_init;
     GPIO_StructInit(&gpio_init);
     gpio_init.GPIO_Mode = GPIO_Mode_AF;
     gpio_init.GPIO_OType = GPIO_OType_PP;
@@ -37,13 +35,16 @@ static void pwm_channel_init(pwm_channel_e i)
     gpio_init.GPIO_Speed = GPIO_Speed_100MHz;
     GPIO_Init(chan->gpio_port, &gpio_init);
     GPIO_PinAFConfig(chan->gpio_port, chan->pin_source, chan->gpio_af_tim);
+}
 
-    //timer
+static void pwm_ch_timer_init(const pwm_channel_t *chan)
+{
+    TIM_TimeBaseInitTypeDef base_init;
+    TIM_OCInitTypeDef oc_init;
+
     RCC_APB1PeriphClockCmd(chan->tim_rcc, ENABLE);
 
-    TIM_TimeBaseInitTypeDef base_init;
     TIM_TimeBaseStructInit(&base_init);
-
     base_init.TIM_Prescaler = 1 - 1;
     base_init.TIM_Period = TIMER_PERIOD - 1;
     base_init.TIM_CounterMode = TIM_CounterMode_Up;
@@ -51,7 +52,6 @@ static void pwm_channel_init(pwm_channel_e i)
     base_init.TIM_RepetitionCounter = 0;
     TIM_TimeBaseInit(chan->tim_base, &base_init);
 
-    TIM_OCInitTypeDef oc_init;
     TIM_OCStructInit(&oc_init);
     oc_init.TIM_OCMode = TIM_OCMode_PWM1;
     oc_init.TIM_OutputState = TIM_OutputState_Enable;
@@ -85,9 +85,21 @@ static void pwm_channel_init(pwm_channel_e i)
             break;
         }
     }
+}
 
+static void pwm_ch_enable(const pwm_channel_t *chan)
+{
     TIM_ARRPreloadConfig(chan->tim_base, ENABLE);
     TIM_Cmd(chan->tim_base, ENABLE);
+}
+
+static void pwm_channel_init(pwm_channel_e i)
+{
+    const pwm_channel_t *chan = &pwm_ch_pool[i];
+
+    pwm_ch_gpio_init(chan);
+    pwm_ch_timer_init(chan);
+    pwm_ch_enable(chan);
 }
 
 void pwm_init(int N)
