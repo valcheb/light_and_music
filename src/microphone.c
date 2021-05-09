@@ -7,6 +7,8 @@
 #include "pdm_filter.h"
 
 static PDMFilter_InitStruct pdm_filter_init;
+static uint16_t mic_pdm_buf[MIC_PDM_SIZE];
+static bool rx_ready = false;
 
 static void mic_gpio_init()
 {
@@ -88,13 +90,11 @@ void mic_enable()
     SPI_I2S_ITConfig(SPI2, SPI_I2S_IT_RXNE, ENABLE);
 }
 
-static uint16_t mic_pdm_buf[MIC_PDM_SIZE];
 void mic_pdm_pcm_convert(uint16_t *pcm_buffer)
 {
     PDM_Filter_64_LSB((uint8_t *)mic_pdm_buf, pcm_buffer, MIC_GAIN, &pdm_filter_init);
 }
 
-static bool rx_ready = false;
 bool mic_rx_ready()
 {
     return rx_ready;
