@@ -7,14 +7,14 @@
 #include "pdm_filter.h"
 
 static PDMFilter_InitStruct pdm_filter_init;
-void mic_init()
+
+static void mic_gpio_init()
 {
-    //gpio
+    GPIO_InitTypeDef gpio_init;
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 
-    GPIO_InitTypeDef gpio_init;
     GPIO_StructInit(&gpio_init);
     gpio_init.GPIO_Mode = GPIO_Mode_AF;
     gpio_init.GPIO_OType = GPIO_OType_PP;
@@ -30,39 +30,56 @@ void mic_init()
     gpio_init.GPIO_Pin = GPIO_Pin_3;
     GPIO_Init(GPIOC, &gpio_init);
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource3, GPIO_AF_SPI2);
+}
 
-    // i2s over spi2
+static void mic_i2s_init()
+{
+    I2S_InitTypeDef i2s_init;
+
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
     RCC_PLLI2SCmd(ENABLE);
 
-    I2S_InitTypeDef i2s_init;
     I2S_StructInit(&i2s_init);
     //SPI_I2S_DeInit(SPI2);
-    i2s_init.I2S_AudioFreq = I2S_AudioFreq_16k; //TODO: study effect of different frequencies
+    i2s_init.I2S_AudioFreq = I2S_AudioFreq_16k;
     i2s_init.I2S_Standard = I2S_Standard_LSB;
     i2s_init.I2S_DataFormat = I2S_DataFormat_16b;
     i2s_init.I2S_CPOL = I2S_CPOL_High;
     i2s_init.I2S_Mode = I2S_Mode_MasterRx;
     i2s_init.I2S_MCLKOutput = I2S_MCLKOutput_Disable;
     I2S_Init(SPI2, &i2s_init);
+}
 
-    //i2s irq
+static void mic_i2s_irq_init()
+{
     NVIC_InitTypeDef NVIC_InitStructure;
+
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_3);
     NVIC_InitStructure.NVIC_IRQChannel = SPI2_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+}
 
-    //pdm filter
+static void mic_pdm_filter_init()
+{
     RCC_AHB1PeriphClockCmd(RCC_AHB1ENR_CRCEN, ENABLE);
+
     pdm_filter_init.LP_HZ = 0;
     pdm_filter_init.HP_HZ = 0;
     pdm_filter_init.Fs = 16000;
     pdm_filter_init.Out_MicChannels = 1;
     pdm_filter_init.In_MicChannels = 1;
     PDM_Filter_Init(&pdm_filter_init);
+}
+
+void mic_init()
+{
+    mic_gpio_init();
+    mic_i2s_init();
+    mic_i2s_irq_init();
+    mic_pdm_filter_init();
 }
 
 void mic_enable()
