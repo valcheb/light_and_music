@@ -121,6 +121,12 @@ void pwm_set_duty_cycle(pwm_channel_e channel, uint16_t duty)
 {
     const pwm_channel_t *chan = &pwm_ch_pool[channel];
 
+#if 0
+    #include <stddef.h>
+    uint8_t *ccr_begin_ptr = (uint8_t *)chan->tim_base + offsetof(TIM_TypeDef, CCR1);
+    uint32_t *ccr_ptr = (uint32_t *)(ccr_begin_ptr + (chan->tim_channel - 1) * sizeof(((TIM_TypeDef *)0)->CCR1));
+    *ccr_ptr = duty * TIMER_PERIOD / MAX_DUTY;
+#else
     switch(chan->tim_channel)
     {
         case 1:
@@ -144,6 +150,7 @@ void pwm_set_duty_cycle(pwm_channel_e channel, uint16_t duty)
             break;
         }
     }
+#endif
 }
 
 void simple_leds_check()
