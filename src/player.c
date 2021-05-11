@@ -135,15 +135,13 @@ static uint32_t i2c_write_register(uint8_t reg, uint8_t data)
     return (i2c_read_register(reg) == data) ? 0 : 1;
 }
 
-void player_init()
+static void player_gpio_init()
 {
-    //gpio
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-    RCC_PLLI2SCmd(ENABLE);
-
     GPIO_InitTypeDef gpio_init;
 
-    //codec reset
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+
+    //codec reset pin
     gpio_init.GPIO_Pin = GPIO_Pin_4;
     gpio_init.GPIO_Mode = GPIO_Mode_OUT;
     gpio_init.GPIO_OType = GPIO_OType_PP;
@@ -157,6 +155,7 @@ void player_init()
     gpio_init.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_9;
     gpio_init.GPIO_Mode = GPIO_Mode_AF;
     gpio_init.GPIO_OType = GPIO_OType_OD;
+
     gpio_init.GPIO_PuPd = GPIO_PuPd_NOPULL;
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &gpio_init);
@@ -184,11 +183,14 @@ void player_init()
     GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SPI3);
 
     GPIO_ResetBits(GPIOD, GPIO_Pin_4);
+}
 
-    //i2c
+static void player_i2c_init()
+{
+    I2C_InitTypeDef i2c_init;
+
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C1, ENABLE);
 
-    I2C_InitTypeDef i2c_init;
     i2c_init.I2C_Mode = I2C_Mode_I2C;
     i2c_init.I2C_DutyCycle = I2C_DutyCycle_2;
     i2c_init.I2C_OwnAddress1 = 0x33;
@@ -196,11 +198,15 @@ void player_init()
     i2c_init.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
     i2c_init.I2C_ClockSpeed = 100000;
     I2C_Init(I2C1, &i2c_init);
+}
 
-    //i2s
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
-
+static void player_i2s_init()
+{
     I2S_InitTypeDef I2S_InitStructure;
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
+    RCC_PLLI2SCmd(ENABLE);
+
     I2S_InitStructure.I2S_AudioFreq = I2S_AudioFreq_16k;
     I2S_InitStructure.I2S_MCLKOutput = I2S_MCLKOutput_Enable;
     I2S_InitStructure.I2S_DataFormat = I2S_DataFormat_16b;
@@ -208,11 +214,14 @@ void player_init()
     I2S_InitStructure.I2S_Standard = I2S_Standard_Phillips;
     I2S_InitStructure.I2S_CPOL = I2S_CPOL_Low;
     I2S_Init(SPI3, &I2S_InitStructure);
+}
 
-    //i2s dma
+static void player_dma_init()
+{
+    DMA_InitTypeDef DMA_InitStruct;
+
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
 
-    DMA_InitTypeDef DMA_InitStruct;
     DMA_Cmd(DMA1_Stream5, DISABLE);
     DMA_DeInit(DMA1_Stream5);
 
@@ -232,37 +241,42 @@ void player_init()
     DMA_InitStruct.DMA_MemoryBurst = DMA_MemoryBurst_Single;
     DMA_InitStruct.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
     DMA_Init(DMA1_Stream5, &DMA_InitStruct);
+}
 
-    //dma irq
+static void player_dma_irq_init()
+{
     NVIC_InitTypeDef NVIC_InitStructure;
 
-    //NVIC_PriorityGroupConfig(NVIC_PriorityGroup_3);
     NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream5_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 10;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 10;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+}
 
-    //CS43L22
+static void player_CL43L22_init()
+{
+    uint32_t res = 0;
+    int delay = 0xFFFF;
+    int Volume = 75;
+    int VV = ((Volume > 100) ? 100 : ((uint8_t)((Volume * 255) / 100)));
+
     I2C_Cmd(I2C1, ENABLE);
     GPIO_ResetBits(GPIOD, GPIO_Pin_4);
-    int n = 0xFFFF;
-    while (n)
+    while (delay)
     {
-        n--;
+        delay--;
     }
     GPIO_SetBits(GPIOD, GPIO_Pin_4);
 
     /* Keep Codec powered OFF */
-    uint32_t res = i2c_write_register(0x02, 0x01);
+    res = i2c_write_register(0x02, 0x01);
     res = i2c_write_register(0x04, 0xAF); /* SPK always OFF & HP always ON */
     /* Clock configuration: Auto detection */
     res = i2c_write_register(0x05, 0x81);
     /* Set the Slave Mode and the audio Standard */
     res = i2c_write_register(0x06, 0x04);
     /* Set the Master volume */
-    int Volume = 80; //привести к адекватному виду TODOт
-    int VV = ((Volume > 100) ? 100 : ((uint8_t)((Volume * 255) / 100)));
     if (VV > 0xE6)
     {
         /* Set the Master volume */
@@ -289,6 +303,16 @@ void player_init()
     /* Adjust PCM volume level */
     res = i2c_write_register(0x1A, 0x0A);
     res = i2c_write_register(0x1B, 0x0A);
+}
+
+void player_init()
+{
+    player_gpio_init();
+    player_i2c_init();
+    player_i2s_init();
+    player_dma_init();
+    player_dma_irq_init();
+    player_CL43L22_init();
 }
 
 void player_enable()
