@@ -11,7 +11,7 @@
 
 static uint16_t sound_buffer[LM_SOUND_BUFFER_SIZE];
 static uint16_t pcm_buffer[MIC_PCM_SIZE];
-//static float32_t *magnitude_buffer;
+static float32_t coeff_buffer[LM_CHANNEL_NUMBER];
 
 void lm_init()
 {
@@ -56,8 +56,13 @@ void lm_process()
             player_send(sound_buffer, LM_SOUND_BUFFER_SIZE);
         }
 
-        spectrum_analysis(sound_buffer);
-        /*, buffer_size, magnitude_buffer, channel_number);*/
+        spectrum_analysis(sound_buffer, coeff_buffer);
+
+        //test
+        for (pwm_channel_e chan = PWM_CHANNEL_0; chan < LM_CHANNEL_NUMBER; chan++)
+        {
+            pwm_set_duty_cycle(chan, (uint16_t)(coeff_buffer[(int)chan] * 2 * MAX_DUTY));
+        }
 
         /*pwm_indicate(magnitude_buffer, channel_number);*/
     }
