@@ -39,11 +39,12 @@ static void mic_i2s_init()
     I2S_InitTypeDef i2s_init;
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
+    RCC_PLLI2SCmd(DISABLE);
+    RCC_PLLI2SConfig(213, 2);
     RCC_PLLI2SCmd(ENABLE);
 
     I2S_StructInit(&i2s_init);
-    //SPI_I2S_DeInit(SPI2);
-    i2s_init.I2S_AudioFreq = I2S_AudioFreq_16k;
+    i2s_init.I2S_AudioFreq = I2S_AudioFreq_32k;
     i2s_init.I2S_Standard = I2S_Standard_LSB;
     i2s_init.I2S_DataFormat = I2S_DataFormat_16b;
     i2s_init.I2S_CPOL = I2S_CPOL_High;

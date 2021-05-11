@@ -201,7 +201,7 @@ void player_init()
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
 
     I2S_InitTypeDef I2S_InitStructure;
-    I2S_InitStructure.I2S_AudioFreq = I2S_AudioFreq_8k;
+    I2S_InitStructure.I2S_AudioFreq = I2S_AudioFreq_16k;
     I2S_InitStructure.I2S_MCLKOutput = I2S_MCLKOutput_Enable;
     I2S_InitStructure.I2S_DataFormat = I2S_DataFormat_16b;
     I2S_InitStructure.I2S_Mode = I2S_Mode_MasterTx;
