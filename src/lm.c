@@ -20,6 +20,14 @@ void lm_init()
     pwm_init(LM_CHANNEL_NUMBER);
     spectrum_init();
 
+    if (LM_SOUND_BUFFER_SIZE % MIC_PCM_SIZE != 0)
+    {
+        while (1)
+        {
+            pwm_error_iter();
+        }
+    }
+
     if (LM_USE_PLAYBACK)
     {
         player_init();
