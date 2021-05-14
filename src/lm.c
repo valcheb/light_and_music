@@ -16,6 +16,7 @@ static float32_t coeff_buffer[LM_CHANNEL_NUMBER];
 void lm_init()
 {
     mic_init();
+    pwm_error_init();
     pwm_init(LM_CHANNEL_NUMBER);
     spectrum_init();
 

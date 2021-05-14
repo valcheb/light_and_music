@@ -14,6 +14,11 @@ typedef struct
     int          tim_channel;
 } pwm_channel_t;
 
+const static pwm_channel_t pwm_error_led =
+{
+    RCC_AHB1Periph_GPIOA, GPIOA, GPIO_Pin_0, GPIO_PinSource0, GPIO_AF_TIM2, RCC_APB1Periph_TIM2, TIM2, 1
+};
+
 const static pwm_channel_t pwm_ch_pool[PWM_CHANNEL_ENUM_SIZE] =
 {
     {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_12, GPIO_PinSource12, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, 1},
@@ -108,12 +113,58 @@ void pwm_init(int N)
     {
         while(1)
         {
-        }; //error
+            pwm_error_iter();
+        }
     }
 
     for (pwm_channel_e i = PWM_CHANNEL_0; i < N; i++)
     {
         pwm_channel_init(i);
+    }
+}
+
+void pwm_error_init()
+{
+    pwm_ch_gpio_init(&pwm_error_led);
+    pwm_ch_timer_init(&pwm_error_led);
+    pwm_ch_enable(&pwm_error_led);
+}
+
+void pwm_error_iter()
+{
+    volatile uint32_t *ccr_ptr;
+    switch(pwm_error_led.tim_channel)
+    {
+        case 1:
+        {
+            ccr_ptr = &pwm_error_led.tim_base->CCR1;
+            break;
+        }
+        case 2:
+        {
+            ccr_ptr = &pwm_error_led.tim_base->CCR2;
+            break;
+        }
+        case 3:
+        {
+            ccr_ptr = &pwm_error_led.tim_base->CCR3;
+            break;
+        }
+        case 4:
+        {
+            ccr_ptr = &pwm_error_led.tim_base->CCR4;
+            break;
+        }
+    }
+
+    for (int duty = MIN_DUTY; duty < MAX_DUTY; duty++)
+    {
+        *ccr_ptr = duty * TIMER_PERIOD / MAX_DUTY;
+    }
+
+    for (int duty = MAX_DUTY; duty >= MIN_DUTY; duty--)
+    {
+        *ccr_ptr = duty * TIMER_PERIOD / MAX_DUTY;
     }
 }
 
