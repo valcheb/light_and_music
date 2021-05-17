@@ -225,6 +225,7 @@ void pwm_indicate(pwm_channel_e channel, lm_led_func_e led_func, uint16_t duty)
             {
                 pwm_set_duty_cycle(channel, MIN_DUTY);
             }
+            break;
         }
     }
 }
