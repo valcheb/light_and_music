@@ -3,9 +3,20 @@
 
 #include "arm_const_structs.h"
 
+#define IFFT_FLAG          0
+#define DO_REVERSE_BIT     1
+#define CHANNEL_BLOCK_SIZE LM_FFT_BUFFER_SIZE / 2 / LM_CHANNEL_NUMBER
+#define NOISE_THRESHOLD    800
+#define COMP_THRESHOLD     0.7079 * 0xffff
+#define COMP_RATIO         3
+#define AVER_CONST         0.8
+#define EXPERIMENT_THRESHOLD  8000
+
 static float32_t fft_input_buffer[2 * LM_FFT_BUFFER_SIZE];
 static float32_t mag_output_buffer[LM_FFT_BUFFER_SIZE];
 static const arm_cfft_instance_f32 *s;
+static float32_t coeff_averange[LM_CHANNEL_NUMBER];
+static float32_t hamming_window[LM_SOUND_BUFFER_SIZE];
 
 void spectrum_init()
 {
@@ -27,58 +38,64 @@ void spectrum_init()
             break;
         }
     }
+
+    for (int i = 0; i < LM_SOUND_BUFFER_SIZE; i++)
+    {
+        hamming_window[i] = 0.54 - 0.46 * cos((2.0 * PI * (i - LM_SOUND_BUFFER_SIZE / 2) / (LM_SOUND_BUFFER_SIZE - 1)));
+    }
 }
 
-void spectrum_analysis(uint16_t *sound, float32_t *coeff)
+void spectrum_analysis(uint16_t *sound, uint16_t *coeff)
 {
-    const static uint8_t ifftFlag = 0;
-    const static uint8_t doBitReverse = 1;
-    const static int block_size = (LM_FFT_BUFFER_SIZE / 2) / LM_CHANNEL_NUMBER;
-    const static float32_t noise_gate = 0.02;
-
-    float32_t window_energy = 0.0;
-
     for (int i = 0; i < LM_FFT_BUFFER_SIZE; i++)
     {
-        fft_input_buffer[2 * i] = (float32_t)sound[i] / (0xffff * 0.5) - 1; //place signal between -1 and 1
+        //hard knee simple sound compression
+        if (sound[i] > COMP_THRESHOLD)
+        {
+            sound[i] = (uint16_t)(((float32_t)sound[i] - COMP_THRESHOLD) / COMP_RATIO + COMP_THRESHOLD);
+        }
+
+        //prepare fft buffer
+        fft_input_buffer[2 * i] = (float32_t)sound[i] * hamming_window[i];
         fft_input_buffer[2 * i + 1] = 0;
     }
 
-    arm_cfft_f32(s, fft_input_buffer, ifftFlag, doBitReverse);
+    //fft and mag
+    arm_cfft_f32(s, fft_input_buffer, IFFT_FLAG, DO_REVERSE_BIT);
     arm_cmplx_mag_f32(fft_input_buffer, mag_output_buffer, LM_FFT_BUFFER_SIZE);
+
+    //reduce impact of zero harmonic and hum
+    mag_output_buffer[0] = 0.01 * mag_output_buffer[0];
+    mag_output_buffer[1] = 0.01 * mag_output_buffer[1];
 
     for (int i = 0; i < LM_FFT_BUFFER_SIZE; i++)
     {
-        window_energy += mag_output_buffer[i] * mag_output_buffer[i];
+        //window width normalize
+        mag_output_buffer[i] /= LM_FFT_BUFFER_SIZE;
+
+        //simple noise gate
+        if (mag_output_buffer[i] < NOISE_THRESHOLD)
+        {
+            mag_output_buffer[i] = 0;
+        }
     }
-    window_energy /= LM_FFT_BUFFER_SIZE;
 
     for (int i = 0; i < LM_CHANNEL_NUMBER; i++)
     {
-        /*
         float32_t maxValue = 0.0;
         uint32_t maxIndex = 0;
-        arm_max_f32(mag_output_buffer + 1 + block_size * i, block_size, &maxValue, &maxIndex); //+1 - avoid zero harmonic
-        coeff[i] = maxValue / window_energy - noise_gate;
-        */
 
-        float32_t block_energy = 0.0;
-        for (int j = block_size * i; j < block_size * (i + 1); j++)
-        {
-            if (j == 0) //avoid zero harmonic
-            {
-                continue;
-            }
-            block_energy += mag_output_buffer[j] * mag_output_buffer[j];
-        }
-        block_energy /= LM_FFT_BUFFER_SIZE;
-        coeff[i] = block_energy / window_energy - noise_gate;
+        //find max in frequency range
+        arm_max_f32(mag_output_buffer + CHANNEL_BLOCK_SIZE * i, CHANNEL_BLOCK_SIZE, &maxValue, &maxIndex);
 
-        if (coeff[i] < 0)
+        //exponential moving average
+        coeff_averange[i] = maxValue * AVER_CONST + coeff_averange[i] * (1 - AVER_CONST);
+
+        //hard crushing of bitdepth
+        if (coeff_averange[i] > EXPERIMENT_THRESHOLD)
         {
-            coeff[i] = 0;
+            coeff_averange[i] = EXPERIMENT_THRESHOLD;
         }
+        coeff[i] = (uint16_t)(coeff_averange[i] * BITCRUSH_DEPTH / EXPERIMENT_THRESHOLD);
     }
-
-    //pwm_array[i] = (uint16_t)( (max_array[i] * 1.5) * 0xffff);
 }
