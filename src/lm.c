@@ -70,9 +70,7 @@ void lm_process()
         //test
         for (pwm_channel_e chan = PWM_CHANNEL_0; chan < LM_CHANNEL_NUMBER; chan++)
         {
-            pwm_set_duty_cycle(chan, (uint16_t)(coeff_buffer[(int)chan] * 2 * MAX_DUTY));
+            pwm_indicate(chan, btn_get_press_state(), coeff_buffer[(int)chan] * MAX_DUTY / BITCRUSH_DEPTH);
         }
-
-        /*pwm_indicate(magnitude_buffer, channel_number);*/
     }
 }

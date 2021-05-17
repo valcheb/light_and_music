@@ -8,6 +8,12 @@ typedef enum
     LM_SOUND_SIZE_1024 = 1024,
 } lm_sound_size_e;
 
+typedef enum
+{
+    LM_LED_FUNC_SMOOTH = 0,
+    LM_LED_FUNC_SHARP
+} lm_led_func_e;
+
 #define LM_CHANNEL_NUMBER     4
 #define LM_SOUND_BUFFER_SIZE  LM_SOUND_SIZE_256
 #define LM_STEREO_BUFFER_SIZE LM_SOUND_BUFFER_SIZE * 2

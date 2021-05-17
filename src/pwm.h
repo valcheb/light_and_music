@@ -21,6 +21,7 @@ void pwm_init(int N);
 void pwm_error_init(void);
 void pwm_error_iter(void);
 void pwm_set_duty_cycle(pwm_channel_e channel, uint16_t duty);
+void pwm_indicate(pwm_channel_e channel, lm_led_func_e led_func, uint16_t duty);
 void simple_leds_check(void);
 
 #endif /*PWM_H_*/

@@ -1,4 +1,5 @@
 #include "pwm.h"
+#include "lm_config.h"
 
 #define TIMER_PERIOD 1750 //48kHz PWM
 
@@ -202,6 +203,29 @@ void pwm_set_duty_cycle(pwm_channel_e channel, uint16_t duty)
         }
     }
 #endif
+}
+
+void pwm_indicate(pwm_channel_e channel, lm_led_func_e led_func, uint16_t duty)
+{
+    switch(led_func)
+    {
+        case LM_LED_FUNC_SMOOTH:
+        {
+            pwm_set_duty_cycle(channel, duty);
+            break;
+        }
+        case LM_LED_FUNC_SHARP:
+        {
+            if (duty > MAX_DUTY / 1024)
+            {
+               pwm_set_duty_cycle(channel, MAX_DUTY);
+            }
+            else
+            {
+                pwm_set_duty_cycle(channel, MIN_DUTY);
+            }
+        }
+    }
 }
 
 void simple_leds_check()
