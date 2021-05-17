@@ -15,17 +15,25 @@ typedef struct
     int          tim_channel;
 } pwm_channel_t;
 
+typedef enum
+{
+    TIM_CHANNEL_1 = 1,
+    TIM_CHANNEL_2 = 2,
+    TIM_CHANNEL_3 = 3,
+    TIM_CHANNEL_4 = 4,
+} tim_channel_e;
+
 const static pwm_channel_t pwm_error_led =
 {
-    RCC_AHB1Periph_GPIOA, GPIOA, GPIO_Pin_0, GPIO_PinSource0, GPIO_AF_TIM2, RCC_APB1Periph_TIM2, TIM2, 1
+    RCC_AHB1Periph_GPIOA, GPIOA, GPIO_Pin_0, GPIO_PinSource0, GPIO_AF_TIM2, RCC_APB1Periph_TIM2, TIM2, TIM_CHANNEL_1
 };
 
 const static pwm_channel_t pwm_ch_pool[PWM_CHANNEL_ENUM_SIZE] =
 {
-    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_12, GPIO_PinSource12, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, 1},
-    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_13, GPIO_PinSource13, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, 2},
-    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_14, GPIO_PinSource14, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, 3},
-    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_15, GPIO_PinSource15, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, 4}
+    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_12, GPIO_PinSource12, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, TIM_CHANNEL_1},
+    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_13, GPIO_PinSource13, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, TIM_CHANNEL_2},
+    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_14, GPIO_PinSource14, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, TIM_CHANNEL_3},
+    {RCC_AHB1Periph_GPIOD, GPIOD, GPIO_Pin_15, GPIO_PinSource15, GPIO_AF_TIM4, RCC_APB1Periph_TIM4, TIM4, TIM_CHANNEL_4}
 };
 
 static void pwm_ch_gpio_init(const pwm_channel_t *chan)
@@ -173,36 +181,29 @@ void pwm_set_duty_cycle(pwm_channel_e channel, uint16_t duty)
 {
     const pwm_channel_t *chan = &pwm_ch_pool[channel];
 
-#if 0
-    #include <stddef.h>
-    uint8_t *ccr_begin_ptr = (uint8_t *)chan->tim_base + offsetof(TIM_TypeDef, CCR1);
-    uint32_t *ccr_ptr = (uint32_t *)(ccr_begin_ptr + (chan->tim_channel - 1) * sizeof(((TIM_TypeDef *)0)->CCR1));
-    *ccr_ptr = duty * TIMER_PERIOD / MAX_DUTY;
-#else
     switch(chan->tim_channel)
     {
-        case 1:
+        case TIM_CHANNEL_1:
         {
             chan->tim_base->CCR1 = duty * TIMER_PERIOD / MAX_DUTY;
             break;
         }
-        case 2:
+        case TIM_CHANNEL_2:
         {
             chan->tim_base->CCR2 = duty * TIMER_PERIOD / MAX_DUTY;
             break;
         }
-        case 3:
+        case TIM_CHANNEL_3:
         {
             chan->tim_base->CCR3 = duty * TIMER_PERIOD / MAX_DUTY;
             break;
         }
-        case 4:
+        case TIM_CHANNEL_4:
         {
             chan->tim_base->CCR4 = duty * TIMER_PERIOD / MAX_DUTY;
             break;
         }
     }
-#endif
 }
 
 void pwm_indicate(pwm_channel_e channel, lm_led_func_e led_func, uint16_t duty)
