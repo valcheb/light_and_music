@@ -87,19 +87,6 @@ void btn_init()
     btn_set_state(false);
 }
 
-
-void btn_handler()
-{
-    if (btn_get_state() == true)
-    {
-        btn_delete_jitter();
-        if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0))
-        {
-            //do something
-        }
-    }
-}
-
 void EXTI0_IRQHandler(void)
 {
     if (EXTI_GetITStatus(EXTI_Line0) != RESET)
