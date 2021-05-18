@@ -25,7 +25,7 @@ typedef enum
 
 const static pwm_channel_t pwm_error_led =
 {
-    RCC_AHB1Periph_GPIOA, GPIOA, GPIO_Pin_0, GPIO_PinSource0, GPIO_AF_TIM2, RCC_APB1Periph_TIM2, TIM2, TIM_CHANNEL_1
+    RCC_AHB1Periph_GPIOA, GPIOA, GPIO_Pin_5, GPIO_PinSource0, GPIO_AF_TIM2, RCC_APB1Periph_TIM2, TIM2, TIM_CHANNEL_1
 };
 
 const static pwm_channel_t pwm_ch_pool[PWM_CHANNEL_ENUM_SIZE] =
