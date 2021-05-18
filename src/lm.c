@@ -8,6 +8,7 @@
 #include "microphone.h"
 #include "player.h"
 #include "spectrum.h"
+#include "button.h"
 
 static uint16_t sound_buffer[LM_SOUND_BUFFER_SIZE];
 static int sound_buffer_wpos = 0;
@@ -45,6 +46,7 @@ void lm_init()
     pwm_error_init();
     pwm_init(LM_CHANNEL_NUMBER);
     spectrum_init();
+    btn_init();
 
     if (LM_SOUND_BUFFER_SIZE % MIC_PCM_SIZE != 0)
     {
@@ -79,6 +81,22 @@ void lm_process()
         mic_pdm_pcm_convert(pcm_buffer);
         memcpy(sound_buffer + sound_buffer_wpos * MIC_PCM_SIZE, pcm_buffer, MIC_PCM_SIZE * sizeof(uint16_t));
         sound_buffer_wpos++;
+    }
+
+    if (btn_get_state())
+    {
+        btn_delete_jitter();
+
+        if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0))
+        {
+            led_func++;
+            if (led_func >= LM_LED_FUNC_ENUM_SIZE)
+            {
+                led_func = LM_LED_FUNC_SMOOTH;
+            }
+        }
+
+        btn_set_state(false);
     }
 
     if ( (sound_buffer_wpos * MIC_PCM_SIZE) == LM_SOUND_BUFFER_SIZE)
