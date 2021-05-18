@@ -116,9 +116,9 @@ static void pwm_channel_init(pwm_channel_e i)
     pwm_ch_enable(chan);
 }
 
-void pwm_init(int N)
+void pwm_init(int channel_number)
 {
-    if (N > PWM_CHANNEL_ENUM_SIZE)
+    if (channel_number > PWM_CHANNEL_ENUM_SIZE)
     {
         while(1)
         {
@@ -126,7 +126,7 @@ void pwm_init(int N)
         }
     }
 
-    for (pwm_channel_e i = PWM_CHANNEL_0; i < N; i++)
+    for (pwm_channel_e i = PWM_CHANNEL_0; i < channel_number; i++)
     {
         pwm_channel_init(i);
     }
