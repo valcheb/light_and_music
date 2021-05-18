@@ -12,7 +12,8 @@
 static uint16_t sound_buffer[LM_SOUND_BUFFER_SIZE];
 static int sound_buffer_wpos = 0;
 static uint16_t pcm_buffer[MIC_PCM_SIZE];
-static float32_t coeff_buffer[LM_CHANNEL_NUMBER];
+static uint16_t coeff_buffer[LM_CHANNEL_NUMBER];
+
 
 void lm_init()
 {
