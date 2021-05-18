@@ -13,7 +13,31 @@ static uint16_t sound_buffer[LM_SOUND_BUFFER_SIZE];
 static int sound_buffer_wpos = 0;
 static uint16_t pcm_buffer[MIC_PCM_SIZE];
 static uint16_t coeff_buffer[LM_CHANNEL_NUMBER];
+static lm_led_func_e led_func = LM_LED_FUNC_SMOOTH;
 
+static void lm_indicate(pwm_channel_e channel, lm_led_func_e led_func, uint16_t duty)
+{
+    switch (led_func)
+    {
+        case LM_LED_FUNC_SMOOTH:
+        {
+            pwm_set_duty_cycle(channel, duty);
+            break;
+        }
+        case LM_LED_FUNC_SHARP:
+        {
+            if (duty > MAX_DUTY / 1024)
+            {
+               pwm_set_duty_cycle(channel, MAX_DUTY);
+            }
+            else
+            {
+                pwm_set_duty_cycle(channel, MIN_DUTY);
+            }
+            break;
+        }
+    }
+}
 
 void lm_init()
 {
@@ -68,10 +92,9 @@ void lm_process()
 
         spectrum_analysis(sound_buffer, coeff_buffer);
 
-        //test
         for (pwm_channel_e chan = PWM_CHANNEL_0; chan < LM_CHANNEL_NUMBER; chan++)
         {
-            pwm_indicate(chan, btn_get_press_state(), coeff_buffer[(int)chan] * MAX_DUTY / BITCRUSH_DEPTH);
+            lm_indicate(chan, led_func, coeff_buffer[(int)chan] * MAX_DUTY / BITCRUSH_DEPTH);
         }
     }
 }
